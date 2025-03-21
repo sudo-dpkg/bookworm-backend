@@ -28,7 +28,7 @@ router.post("/", protectRoute, async (req, res) => {
 
     await newBook.save();
 
-    res.status(201).json(newBook.toObject());
+    res.status(201).json(newBook);
   } catch (error) {
     console.log("Error creating book", error);
     res.status(500).json({ message: error.message });
@@ -46,8 +46,7 @@ router.get("/", protectRoute, async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .populate("user", "username profileImage")
-      .lean();
+      .populate("user", "username profileImage");
 
     const totalBooks = await Book.countDocuments();
 
