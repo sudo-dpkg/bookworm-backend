@@ -52,10 +52,11 @@ router.post('/register', async (req, res) => {
         res.status(201).json({
             token,
             user: {
-                _id: user._id,
+                id: user._id,
                 username: user.username,
                 email: user.email,
                 profileImage: user.profileImage,
+                createdAt: user.createdAt,
             },
         });
 
@@ -85,10 +86,11 @@ router.post('/login', async (req, res) => {
         res.status(200).json({
             token,
             user: {
-                _id: user._id,
+                id: user._id,
                 username: user.username,
                 email: user.email,
                 profileImage: user.profileImage,
+                createdAt: user.createdAt,
             },
         });
 
