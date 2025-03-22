@@ -1,7 +1,14 @@
 import express from "express";
+import bodyParser from "body-parser";
 import cloudinary from "../lib/cloudinary.js";
 import Book from "../models/Book.js";
 import protectRoute from "../middleware/auth.middleware.js";
+
+const app = express();
+
+// Middleware to increase body size limit
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
 const router = express.Router();
 
