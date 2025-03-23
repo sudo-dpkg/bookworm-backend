@@ -2,6 +2,9 @@ import express from "express";
 import cloudinary from "../lib/cloudinary.js";
 import Book from "../models/Book.js";
 import protectRoute from "../middleware/auth.middleware.js";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 
 const app = express();
 
@@ -10,23 +13,50 @@ app.use(express.urlencoded({ limit: '100mb', extended: true }));
 
 const router = express.Router();
 
-router.post("/", protectRoute, async (req, res) => {
-  try {
-    const { title, caption, rating, image } = req.body;
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = './uploads';
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
 
-    if (!image || !title || !rating || !caption) {
+const upload = multer({ storage });
+
+// Updated POST route to handle multipart/form-data
+router.post("/", protectRoute, upload.single('image'), async (req, res) => {
+  try {
+    const { title, caption, rating } = req.body;
+    
+    // Check if all required fields are provided
+    if (!req.file || !title || !rating || !caption) {
+      // Clean up uploaded file if any
+      if (req.file && req.file.path) {
+        fs.unlinkSync(req.file.path);
+      }
       return res.status(400).json({ message: "Please provide all fields" });
     }
 
-    // upload the image to cloudinary
-    const uploadResponse = await cloudinary.uploader.upload(image);
+    // Upload the image from temp file to cloudinary
+    const uploadResponse = await cloudinary.uploader.upload(req.file.path);
+    
+    // Clean up the temp file
+    fs.unlinkSync(req.file.path);
+    
     const imageUrl = uploadResponse.secure_url;
 
-    // save to db
+    // Save to db
     const newBook = new Book({
       title,
       caption,
-      rating,
+      rating: parseInt(rating), // Convert string to number since FormData sends everything as strings
       image: imageUrl,
       user: req.user._id,
     });
@@ -35,6 +65,10 @@ router.post("/", protectRoute, async (req, res) => {
 
     res.status(201).json(newBook);
   } catch (error) {
+    // Clean up uploaded file if any error occurs
+    if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
     console.log("Error creating book", error);
     res.status(500).json({ message: error.message });
   }
