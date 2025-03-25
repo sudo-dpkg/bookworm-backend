@@ -17,7 +17,6 @@ const router = express.Router();
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uploadDir = './uploads';
-    // Create directory if it doesn't exist
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -30,33 +29,26 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// Updated POST route to handle multipart/form-data
 router.post("/", protectRoute, upload.single('image'), async (req, res) => {
   try {
     const { title, caption, rating } = req.body;
-    
-    // Check if all required fields are provided
     if (!req.file || !title || !rating || !caption) {
-      // Clean up uploaded file if any
       if (req.file && req.file.path) {
         fs.unlinkSync(req.file.path);
       }
       return res.status(400).json({ message: "Please provide all fields" });
     }
 
-    // Upload the image from temp file to cloudinary
     const uploadResponse = await cloudinary.uploader.upload(req.file.path);
     
-    // Clean up the temp file
     fs.unlinkSync(req.file.path);
     
     const imageUrl = uploadResponse.secure_url;
 
-    // Save to db
     const newBook = new Book({
       title,
       caption,
-      rating: parseInt(rating), // Convert string to number since FormData sends everything as strings
+      rating: parseInt(rating),
       image: imageUrl,
       user: req.user._id,
     });
@@ -65,7 +57,6 @@ router.post("/", protectRoute, upload.single('image'), async (req, res) => {
 
     res.status(201).json(newBook);
   } catch (error) {
-    // Clean up uploaded file if any error occurs
     if (req.file && req.file.path && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }

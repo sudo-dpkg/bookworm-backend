@@ -35,7 +35,7 @@ This is the **backend** of the Book Recommendation App, built using **Node.js** 
 | GET | `/api/books` | Fetch All Posts |
 | POST | `/api/books` | Create a New Post |
 | DELETE | `/api/books/:id` | Delete a Post |
-| POST | `/api/books/user` | Posts by user |
+| GET | `/api/books/user` | Fetch User Posts |
 
 ## APP Preview
 ![App Preview](app.png)
